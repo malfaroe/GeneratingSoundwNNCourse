@@ -19,7 +19,8 @@ class Autoencoder:
     architecture with mirrored encoder and decoder components
     
     params:
-    input_shape: tuple (nr_rows, nr_columns, nr_channels) 
+    input_shape: tuple (nr_rows (width), nr_columns (height), nr_channels) 
+                ex: with a grayscale image the nr of channels is 1
     conv_filters: tuple of nr of filters on each layer
     conv_kernels: tuple, nr of kernels for each layer. Ex:
     (3,5,2) means first layer with a 3x3 kernel, second layer with 5x5 etc
@@ -39,6 +40,7 @@ class Autoencoder:
         self.conv_strides = conv_strides
         self.latent_space_dim = latent_space_dim
 
+        #Initialize the components
         self.encoder = None #atributo que sera un keras tf model
         self.decoder = None #atributo que sera un keras tf model
         self.model = None #modelo general autoencoder que abarcara toda la arquitectura (encoder +decoder)
@@ -47,7 +49,31 @@ class Autoencoder:
         self._num_conv_layers = len(conv_filters) #siempre hay tantos filtros como conv layers
 
 
-        
+        #First we build and initialize the entire architecture with a method called build
+
+        def _build(self):
+            """Builds and initialize 
+            the entire architecture"""
+            self._build_encoder()
+            self._build_decoder()
+            self._build_model()
+
+        def _build_encoder(self):
+            """Builds and assemble the encoder
+            components 
+            params:
+            encoder_input : vector, input data formated by Keras Input method
+            conv_layers: creates all the conv layers with a method
+            bottleneck: creates bottleneck with a method
+            """
+            encoder_input = self._add_encoder_input()
+            conv_layers = self._add_conv_layers(encoder_input)
+            bottleneck = self._add_bottleneck(conv_layers)
+            self.encoder = Model(encoder_input, bottleneck, name = "encoder")
+            
+
+
+        self._build() #builds encoder+decoder+model
 
 
         pass
