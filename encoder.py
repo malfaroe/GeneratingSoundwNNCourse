@@ -48,6 +48,7 @@ class Autoencoder:
         #Private atributes
         self._num_conv_layers = len(conv_filters) #siempre hay tantos filtros como conv layers
 
+        self._build() #builds encoder+decoder+model
 
         #First we build and initialize the entire architecture with a method called build
 
@@ -108,11 +109,33 @@ class Autoencoder:
             x = BatchNormalization(name = f"encoder_bn_{layer_number}")(x)
             return x
 
+        def _add_bottleneck(self, x):
+            """Final stage: flattens the data and
+            adds a Bottleneck, which is a Dense Layer
+            Flatten method: flattens the multi-dimensional
+             input tensors into a single dimension"""
+
+            #Flatten the data
+            x = Flatten()(x)
+            #Now pass the flatten data through a dense layer
+            x = Dense(self.latent_space_dim, name = "encoder_output")
+            return x
+        
+            
+if __name__ == "__main__":
+    autoencoder = Autoencoder(
+    input_shape=(28, 28, 1),
+    conv_filters=(32, 64, 64, 64),
+    conv_kernels=(3, 3, 3, 3),
+    conv_strides=(1, 2, 2, 1),
+    latent_space_dim=2
+    )
+    autoencoder.summary()
             
 
 
 
-        self._build() #builds encoder+decoder+model
+        
 
 
-        print("Done.")
+    print("Done.")
