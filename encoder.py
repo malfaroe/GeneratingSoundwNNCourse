@@ -47,79 +47,87 @@ class Autoencoder:
 
         #Private atributes
         self._num_conv_layers = len(conv_filters) #siempre hay tantos filtros como conv layers
-
-        self._build() #builds encoder+decoder+model
+        self._shape_before_bottleneck = None
 
         #First we build and initialize the entire architecture with a method called build
 
-        def _build(self):
-            """Builds and initialize 
-            the entire architecture"""
-            self._build_encoder()
-            self._build_decoder()
-            self._build_model()
+        self._build() #builds encoder+decoder+model
+        
 
-        def _build_encoder(self):
-            """Builds and assemble the encoder
-            components 
-            params:
-            encoder_input : vector, input data formated by Keras Input method
-            conv_layers: creates all the conv layers with a method
-            bottleneck: creates bottleneck with a method
-            """
-            encoder_input = self._add_encoder_input()
-            conv_layers = self._add_conv_layers(encoder_input)
-            #Bottleneck recibe el output de conv_layers y entrega el output del encoder
-            bottleneck = self._add_bottleneck(conv_layers)
-            #Finalmente encoder es el modelo total que usa el metodo bottleneck para
-            #entregar su resultado (data comprimida, coded data)
-            #Bottleneck es el encoder output
-            self.encoder = Model(encoder_input, bottleneck, name = "encoder") 
+    def summary(self):
+        self.encoder.summary()
 
 
-        def _add_encoder_input(self):
-            """Creates an input layer using the keras
-            layer called Input """
-            return Input(shape = self.input_shape, name = "encoder_input")
+    def _build(self):
+        """Builds and initialize 
+        the entire architecture"""
+        self._build_encoder()
+        #self._build_decoder()
+        #self._build_model()
 
-        def _add_conv_layers(self, encoder_input):
-            """Creates all the convolutional layers of
-            the encoder, moving through the network"""
-            x = encoder_input
-            for layer_index in range(self.num_conv_layers):
-                x = self._add_conv_layer(layer_index, x)
-            return x
+    def _build_encoder(self):
+        """Builds and assemble the encoder
+        components 
+        params:
+        encoder_input : vector, input data formated by Keras Input method
+        conv_layers: creates all the conv layers with a method
+        bottleneck: creates bottleneck with a method
+        """
+        encoder_input = self._add_encoder_input()
+        conv_layers = self._add_conv_layers(encoder_input)
+        #Bottleneck recibe el output de conv_layers y entrega el output del encoder
+        bottleneck = self._add_bottleneck(conv_layers)
+        #Finalmente encoder es el modelo total que usa el metodo bottleneck para
+        #entregar su resultado (data comprimida, coded data)
+        #Bottleneck es el encoder output
+        self.encoder = Model(encoder_input, bottleneck, name = "encoder") 
 
-        def _add_conv_layer(self, layer_index, x):
-            """Creates a convolutional block
-            consisting of Conv2D + ReLU + 
-            Batch Normamization
-            Recordar que la dimension del kernel es
-            la que le da el nombre a la red conv. En
-             este caso el kernel es 2d"""
 
-            layer_number = layer_index +  1 #because 1st layer is the input layer
-            conv_layer = Conv2D(filters = self.conv_filters,
-            kernel_size= self.conv_kernels[layer_index],
-            strides = self.conv_strides[layer_index], 
-            padding = "same", name = f"encoder_conv_layer_{layer_number}")
+    def _add_encoder_input(self):
+        """Creates an input layer using the keras
+        layer called Input """
+        return Input(shape = self.input_shape, name = "encoder_input")
 
-            x = conv_layer(x)
-            x = ReLU(name = f"encoder_relu_{layer_number}")(x) #(x) means "applied to x"
-            x = BatchNormalization(name = f"encoder_bn_{layer_number}")(x)
-            return x
+    def _add_conv_layers(self, encoder_input):
+        """Creates all the convolutional layers of
+        the encoder, moving through the network"""
+        x = encoder_input
+        for layer_index in range(self._num_conv_layers):
+            x = self._add_conv_layer(layer_index, x)
+        return x
 
-        def _add_bottleneck(self, x):
-            """Final stage: flattens the data and
-            adds a Bottleneck, which is a Dense Layer
-            Flatten method: flattens the multi-dimensional
-             input tensors into a single dimension"""
+    def _add_conv_layer(self, layer_index, x):
+        """Creates a convolutional block
+        consisting of Conv2D + ReLU + 
+        Batch Normamization
+        Recordar que la dimension del kernel es
+        la que le da el nombre a la red conv. En
+            este caso el kernel es 2d"""
 
-            #Flatten the data
-            x = Flatten()(x)
-            #Now pass the flatten data through a dense layer
-            x = Dense(self.latent_space_dim, name = "encoder_output")
-            return x
+        layer_number = layer_index +  1 #because 1st layer is the input layer
+        conv_layer = Conv2D(filters = self.conv_filters[layer_index],
+        kernel_size= self.conv_kernels[layer_index],
+        strides = self.conv_strides[layer_index], 
+        padding = "same", name = f"encoder_conv_layer_{layer_number}")
+
+        x = conv_layer(x)
+        x = ReLU(name = f"encoder_relu_{layer_number}")(x) #(x) means "applied to x"
+        x = BatchNormalization(name = f"encoder_bn_{layer_number}")(x)
+        return x
+
+    def _add_bottleneck(self, x):
+        """Final stage: flattens the data and
+        adds a Bottleneck, which is a Dense Layer
+        Flatten method: flattens the multi-dimensional
+            input tensors into a single dimension"""
+
+        #Flatten the data
+        x = Flatten()(x)
+        #Now pass the flatten data through a dense layer
+        x = Dense(self.latent_space_dim, name = "encoder_output")(x)
+        return x
+
+    
         
             
 if __name__ == "__main__":
@@ -127,9 +135,7 @@ if __name__ == "__main__":
     input_shape=(28, 28, 1),
     conv_filters=(32, 64, 64, 64),
     conv_kernels=(3, 3, 3, 3),
-    conv_strides=(1, 2, 2, 1),
-    latent_space_dim=2
-    )
+    conv_strides=(1, 2, 2, 1),latent_space_dim=2)
     autoencoder.summary()
             
 
