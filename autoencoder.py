@@ -10,7 +10,8 @@ https://medium.com/@AnasBrital98/autoencoders-explained-da131e60e02a"""
 """Class autoencoder"""
 
 from tensorflow.keras import Model 
-from tensorflow.keras.layers import Input,Conv2D, ReLU, BatchNormalization, Flatten, Dense
+from tensorflow.keras.layers import Input,Conv2D, ReLU, BatchNormalization, 
+Flatten, Dense, Reshape
 from tensorflow.keras import backend as K
 from keras.datasets import mnist
 
@@ -84,18 +85,44 @@ class Autoencoder:
         conv_transpose_layers = self._add_conv_transpose_layers(reshape_layer)
         decoder_output = self._add_decoder_output(conv_transpose_layers)
         decoder_model = Model(decoder_input, decoder_output, name = "decoder")
-            
 
 
+    def _add_decoder_input(self):
+        """The bottleneck output is the decoder input"""
+        return Input(shape = self.latent_space_dim, name = "decoder_input")
 
-        #Bottleneck recibe el output de conv_layers y entrega el output del encoder
-        bottleneck = self._add_bottleneck(conv_layers)
-        #Finalmente encoder es el modelo total que usa el metodo bottleneck para
-        #entregar su resultado (data comprimida, coded data)
-        #Bottleneck es el encoder output
-        self.encoder = Model(encoder_input, bottleneck, name = "encoder") 
+    
+    def _add_dense_layers(self, decoder_input):
+        """Create the decoder dense layer. We
+        need to specify the nr of neurons on 
+        the layer, which is equal to the shape of last 
+        layer before the bottleneck, self._shape_before_bottleneck.
+        The nr of neurons will be equal to the total elements of the shape:
+        Ex: _shape_before_bottleneck = [1,2,4] then nr_neurons = 1x2x4 = 8
+        Inorder to multiply the dims of an  array we use Numpy prod 
+        """
+        num_neurons = np.prod(self._shape_before_bottleneck)
+        dense_layer = Dense(num_neurons, name = "decoder_dense")(decoder_input)
+        return dense_layer
+
+    def _add_reshape_layer(self, dense_layer):
+        """From the dense layer we will received a flatten structure
+        so we need to turn it back to a 3D array with the same shape of
+        the encoder before we apply there the conv layer (shape before
+        bottleneck). In order to
+        do that we will use the Keras leyer named Reshape """
+
+        reshape_layer = Reshape(self._shape_before_bottleneck)(dense_layer)
+        return reshape_layer
 
 
+    def _add_conv_transpose_layers(self, x):
+        """Adds conv transpose blocks
+        Loops through all the cnv layers in
+        reverse order and stops at the first layer"""
+        
+
+        
 
     ###ENCODER ARCHITECTURE
     def _build_encoder(self):
