@@ -84,7 +84,7 @@ class Autoencoder:
         conv_transpose_layers = self._add_conv_transpose_layers(reshape_layer)
         decoder_output = self._add_decoder_output(conv_transpose_layers)
         decoder_model = Model(decoder_input, decoder_output, name = "decoder")
-        
+            
 
 
 
