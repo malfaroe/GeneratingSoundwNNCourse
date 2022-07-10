@@ -10,10 +10,11 @@ https://medium.com/@AnasBrital98/autoencoders-explained-da131e60e02a"""
 """Class autoencoder"""
 
 from tensorflow.keras import Model 
-from tensorflow.keras.layers import Input,Conv2D, ReLU, BatchNormalization, 
-Flatten, Dense, Reshape
+from tensorflow.keras.layers import Input, Conv2D, ReLU, BatchNormalization, \
+    Flatten, Dense, Reshape, Conv2DTranspose, Activation
 from tensorflow.keras import backend as K
 from keras.datasets import mnist
+import numpy as np
 
 class Autoencoder:
     """Class autoencoder represents a Convolutional autoencoder
@@ -57,6 +58,7 @@ class Autoencoder:
 
     def summary(self):
         self.encoder.summary()
+        self.decoder.summary()
 
 
     def _build(self):
@@ -66,63 +68,7 @@ class Autoencoder:
         self._build_decoder()
         #self._build_model()
 
-    #DECODER ARCHITECTURE
-    
-    def _build_decoder(self): 
-        """On reverse order we will have:
-        - a dense layer
-        - reshape to a 3D array
-        - Convolutional transposer layer
-        - Final output of the network
-        The final model will integrate the
-        encoder and decoder using the Keras
-        Model object: Model(input = encoder_output,
-        output = decoder_output)
-        """
-        decoder_input = self._add_decoder_input()
-        dense_layer = self._add_dense_layers(decoder_input)
-        reshape_layer = self._add_reshape_layer(dense_layer)
-        conv_transpose_layers = self._add_conv_transpose_layers(reshape_layer)
-        decoder_output = self._add_decoder_output(conv_transpose_layers)
-        decoder_model = Model(decoder_input, decoder_output, name = "decoder")
-
-
-    def _add_decoder_input(self):
-        """The bottleneck output is the decoder input"""
-        return Input(shape = self.latent_space_dim, name = "decoder_input")
-
-    
-    def _add_dense_layers(self, decoder_input):
-        """Create the decoder dense layer. We
-        need to specify the nr of neurons on 
-        the layer, which is equal to the shape of last 
-        layer before the bottleneck, self._shape_before_bottleneck.
-        The nr of neurons will be equal to the total elements of the shape:
-        Ex: _shape_before_bottleneck = [1,2,4] then nr_neurons = 1x2x4 = 8
-        Inorder to multiply the dims of an  array we use Numpy prod 
-        """
-        num_neurons = np.prod(self._shape_before_bottleneck)
-        dense_layer = Dense(num_neurons, name = "decoder_dense")(decoder_input)
-        return dense_layer
-
-    def _add_reshape_layer(self, dense_layer):
-        """From the dense layer we will received a flatten structure
-        so we need to turn it back to a 3D array with the same shape of
-        the encoder before we apply there the conv layer (shape before
-        bottleneck). In order to
-        do that we will use the Keras leyer named Reshape """
-
-        reshape_layer = Reshape(self._shape_before_bottleneck)(dense_layer)
-        return reshape_layer
-
-
-    def _add_conv_transpose_layers(self, x):
-        """Adds conv transpose blocks
-        Loops through all the cnv layers in
-        reverse order and stops at the first layer"""
-        
-
-        
+  
 
     ###ENCODER ARCHITECTURE
     def _build_encoder(self):
@@ -180,14 +126,119 @@ class Autoencoder:
         adds a Bottleneck, which is a Dense Layer
         Flatten method: flattens the multi-dimensional
             input tensors into a single dimension"""
-
+        #saves shape of data before bottleneck in a tuple
+        self._shape_before_bottleneck = K.int_shape(x)[1:] 
         #Flatten the data
         x = Flatten()(x)
         #Now pass the flatten data through a dense layer
         x = Dense(self.latent_space_dim, name = "encoder_output")(x)
         return x
 
+    #######
+    #DECODER ARCHITECTURE
     
+    def _build_decoder(self): 
+        """On reverse order we will have:
+        - a dense layer
+        - reshape to a 3D array
+        - Convolutional transposer layer
+        - Final output of the network
+        The final model will integrate the
+        encoder and decoder using the Keras
+        Model object: Model(input = encoder_output,
+        output = decoder_output)
+        """
+        decoder_input = self._add_decoder_input()
+        dense_layer = self._add_dense_layers(decoder_input)
+        reshape_layer = self._add_reshape_layer(dense_layer)
+        conv_transpose_layers = self._add_conv_transpose_layers(reshape_layer)
+        decoder_output = self._add_decoder_output(conv_transpose_layers)
+        self.decoder = Model(decoder_input, decoder_output, name = "decoder")
+
+
+    def _add_decoder_input(self):
+        """The bottleneck output is the decoder input"""
+        return Input(shape = self.latent_space_dim, name = "decoder_input")
+
+    
+    def _add_dense_layers(self, decoder_input):
+        """Create the decoder dense layer. We
+        need to specify the nr of neurons on 
+        the layer, which is equal to the shape of last 
+        layer before the bottleneck, self._shape_before_bottleneck.
+        The nr of neurons will be equal to the total elements of the shape:
+        Ex: _shape_before_bottleneck = [1,2,4] then nr_neurons = 1x2x4 = 8
+        Inorder to multiply the dims of an  array we use Numpy prod 
+        """
+        num_neurons = np.prod(self._shape_before_bottleneck)
+        dense_layer = Dense(num_neurons, name = "decoder_dense")(decoder_input)
+        return dense_layer
+
+    def _add_reshape_layer(self, dense_layer):
+        """From the dense layer we will received a flatten structure
+        so we need to turn it back to a 3D array with the same shape of
+        the encoder before we apply there the conv layer (shape before
+        bottleneck). In order to
+        do that we will use the Keras leyer named Reshape """
+
+        reshape_layer = Reshape(self._shape_before_bottleneck)(dense_layer)
+        return reshape_layer
+
+
+    def _add_conv_transpose_layers(self, x):
+        """Adds conv transpose blocks
+        Loops through all the cnv layers in
+        reverse order and stops at the first layer
+        (we will use that for another operation
+        param:
+        x: reshaped_layer"""
+        #Iterate in reverse order leaving the first layer out...
+        for layer_index in reversed(range(1, self._num_conv_layers)):
+            x = self._add_conv_transpose_layer(layer_index, x)
+        return x
+         
+
+    def _add_conv_transpose_layer(self, layer_index, x):
+        layer_num = self._num_conv_layers - layer_index
+        conv_transpose_layer = Conv2DTranspose(
+            filters = self.conv_filters[layer_index],
+            kernel_size = self.conv_kernels[layer_index],
+            strides = self.conv_strides[layer_index],
+            padding = "same", 
+            name = f"decoder_conv_transpose_layer_{layer_num}")
+
+        x = conv_transpose_layer(x)
+        #Apply non-linearity
+        x = ReLU(name = f"decoder_relu_{layer_num}")(x)
+        x = BatchNormalization(name = f"decoder_bn_{layer_num}")(x)
+        return x
+         
+
+    def _add_decoder_output(self, x):
+        """Final convolutional layer
+        to be added to decoder but with
+        sigmoid activation
+        The shape of the output data here will be
+        equal to that of the initial input
+        Ex: [28,28,1]. If we want the third dimension to
+        be 1, then filters must be set to 1
+        Besides, the indexes of conv kernels and strides 
+        to use are the
+        first ones on each of those
+        vectores, so the index  will be [0], porque estamos emulando
+        la primera layer (input)"""
+        conv_transpose_layer = Conv2DTranspose(
+        filters = 1,
+        kernel_size= self.conv_kernels[0],
+        strides = self.conv_strides[0], 
+        padding = "same", 
+        name = f"encoder_conv_layer_{self._num_conv_layers}")
+        ##Apply to the incoming graph of layers (x)
+        x = conv_transpose_layer(x)
+        #Sigmoid
+        output_layer = Activation("sigmoid", name = "sigmoid_layer")(x)
+        return output_layer
+
         
             
 if __name__ == "__main__":
@@ -195,7 +246,8 @@ if __name__ == "__main__":
     input_shape=(28, 28, 1),
     conv_filters=(32, 64, 64, 64),
     conv_kernels=(3, 3, 3, 3),
-    conv_strides=(1, 2, 2, 1),latent_space_dim=2)
+    conv_strides=(1, 2, 2, 1),
+    latent_space_dim=2)
     autoencoder.summary()
             
 
