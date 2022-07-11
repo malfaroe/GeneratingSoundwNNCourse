@@ -13,6 +13,9 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Conv2D, ReLU, BatchNormalization, \
     Flatten, Dense, Reshape, Conv2DTranspose, Activation
 from tensorflow.keras import backend as K
+from tensorflow.keras.optimizers import Adam
+
+from tensorflow.keras.losses import MeanSquaredError
 from keras.datasets import mnist
 import numpy as np
 
@@ -45,11 +48,13 @@ class Autoencoder:
         #Initialize the components
         self.encoder = None #atributo que sera un keras tf model
         self.decoder = None #atributo que sera un keras tf model
-        self.model = None #modelo general autoencoder que abarcara toda la arquitectura (encoder +decoder)
+        self.autoencoder = None  #modelo general autoencoder que abarcara toda la arquitectura (encoder +decoder)
+        #self.model = None #modelo general autoencoder que abarcara toda la arquitectura (encoder +decoder)
 
         #Private atributes
         self._num_conv_layers = len(conv_filters) #siempre hay tantos filtros como conv layers
         self._shape_before_bottleneck = None
+        self._model_input = None ##Modelo integrado final, por ahora en None
 
         #First we build and initialize the entire architecture with a method called build
 
@@ -59,6 +64,7 @@ class Autoencoder:
     def summary(self):
         self.encoder.summary()
         self.decoder.summary()
+        self.autoencoder.summary()
 
 
     def _build(self):
@@ -66,9 +72,10 @@ class Autoencoder:
         the entire architecture"""
         self._build_encoder()
         self._build_decoder()
-        #self._build_model()
+        self._build_autoencoder()
 
-  
+
+    
 
     ###ENCODER ARCHITECTURE
     def _build_encoder(self):
@@ -80,6 +87,7 @@ class Autoencoder:
         bottleneck: creates bottleneck with a method
         """
         encoder_input = self._add_encoder_input()
+        self._model_input = encoder_input #sera el input del modelo integrado (***)
         conv_layers = self._add_conv_layers(encoder_input)
         #Bottleneck recibe el output de conv_layers y entrega el output del encoder
         bottleneck = self._add_bottleneck(conv_layers)
@@ -240,6 +248,35 @@ class Autoencoder:
         return output_layer
 
         
+
+    #Building the autoencoder as the integrated structure
+    
+    def _build_autoencoder(self): #(***: modelo integrado)
+        model_input = self._model_input
+        model_output = self.decoder(self.encoder(model_input))
+        self.autoencoder = Model(model_input, model_output, name = "autoencoder")
+
+
+    #Additional methods for training the model...
+    """We need to compile the model and then training it..."""
+    def compile(self, learning_rate = 0.0001):
+        optimizer = Adam(learning_rate = learning_rate)
+        mse_loss = MeanSquaredError()
+        self.autoencoder.compile(optimizer = optimizer, loss = mse_loss)
+
+    def train(self, x_train, batch_size, num_epochs):
+        """Como autoencoders trata de reconstruir un input
+        se usa el mismo input como referencia para estimar el error
+        . Es decir el y es igual al x en la instaciacion de fit"""
+        self.autoencoder.fit(x_train, 
+        x_train,
+        batch_size = batch_size, num_epochs = num_epochs,
+        shuffle = True)
+
+
+
+    
+
             
 if __name__ == "__main__":
     autoencoder = Autoencoder(
