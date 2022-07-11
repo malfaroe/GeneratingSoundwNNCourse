@@ -264,13 +264,13 @@ class Autoencoder:
         mse_loss = MeanSquaredError()
         self.autoencoder.compile(optimizer = optimizer, loss = mse_loss)
 
-    def train(self, x_train, batch_size, num_epochs):
+    def train(self, x_train, batch_size, epochs):
         """Como autoencoders trata de reconstruir un input
         se usa el mismo input como referencia para estimar el error
         . Es decir el y es igual al x en la instaciacion de fit"""
         self.autoencoder.fit(x_train, 
         x_train,
-        batch_size = batch_size, num_epochs = num_epochs,
+        batch_size = batch_size, epochs = epochs,
         shuffle = True)
 
 
