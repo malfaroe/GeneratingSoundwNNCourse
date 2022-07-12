@@ -18,6 +18,8 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import MeanSquaredError
 from keras.datasets import mnist
 import numpy as np
+import os
+import pickle
 
 class Autoencoder:
     """Class autoencoder represents a Convolutional autoencoder
@@ -272,6 +274,64 @@ class Autoencoder:
         x_train,
         batch_size = batch_size, epochs = epochs,
         shuffle = True)
+
+
+    ##SAVING AND LOADING BACK UTILITIES
+    def save(self, save_folder = "."):
+        """Utility for saving the trained model:
+        Once we have trained the model we need to save
+        it along with all the information about its
+        parameters (num kernels, strides,etc) and
+        the respective weights"""
+        self._create_if_doesnt_exist(save_folder)
+        self._save_parameters(save_folder)
+        self._save_weights(save_folder)
+
+    def _create_if_doesnt_exist(self, folder):
+        """Checks if the save folder exists and creates
+        one in case it doesnt"""
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+    
+
+
+    def _save_parameters(self, save_folder):
+        """Saves all the model parameters in
+        save_folder creating the file parameters.pkl"""
+        parameters = [self.input_shape,
+        self.conv_filters,
+                self.conv_kernels, 
+                self.conv_strides, 
+                self.latent_space_dim]
+            
+        save_path = os.path.join(save_folder, "parameters.pkl")
+        with open(save_path, "wb") as f:
+            pickle.dump(parameters, f)
+
+    def _save_weights(self, save_folder):
+        save_path = os.path.join(save_folder, "weights.h5")
+        self.autoencoder.save_weights(save_path)
+
+
+
+    @classmethod #permite acceder auna funcion de la clase sin instanciarla
+                #En vez de self usa cls
+    def load(cls, save_folder = "."):
+        """Loads the saved parameters and the weights
+        the creates an auoencoder object using the parameters"""
+        parameters_path = os.path.join(save_folder, "parameters.pkl")
+        with open(parameters_path, "rb") as f:
+            parameters = pickle.load(f)
+        #Ahora creamos una instancia de autoencoder pasandole los parametros
+        autoencoder = Autoencoder(*parameters)
+        #Cargamos los weights ahora
+        weights_path = os.path.join(save_folder, "weights.h5")
+        autoencoder.load_weights(weights_path)
+        return autoencoder
+
+    def load_weights(self, weights_path):
+        self.autoencoder.load_weights(weights_path)
+
 
 
 

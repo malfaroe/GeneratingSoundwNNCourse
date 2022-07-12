@@ -1,13 +1,14 @@
 """This unit contains utilities for preprocessing
  the MNIST dataset and 
-instatiating the model for training"""
+instatiating the model for training
+"""
 
 from tensorflow.keras.datasets import mnist
 from autoencoder import Autoencoder
 
 LEARNING_RATE = 0.0005
 BATCH_SIZE = 32
-EPOCHS = 20
+EPOCHS = 2
 
 def load_mnist():
     """This utility preprocesses the mnist dataset:
@@ -43,8 +44,15 @@ def train(x_train, learning_rate, batch_size, epochs):
 
 
 
+
+
+
 if __name__ == "__main__":
     x_train, y_train, x_test, y_test = load_mnist()
     autoencoder = train(x_train[:500], LEARNING_RATE, BATCH_SIZE, EPOCHS)
+    autoencoder.save("autoencoder")
+    autoencoder2 = Autoencoder.load("autoencoder")
+    autoencoder2.summary()
     print("Done.")
+
 
