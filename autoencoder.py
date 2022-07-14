@@ -334,9 +334,6 @@ class Autoencoder:
 
 
 
-
-    
-
             
 if __name__ == "__main__":
     autoencoder = Autoencoder(
@@ -348,9 +345,7 @@ if __name__ == "__main__":
     autoencoder.summary()
             
 
+       
 
 
-        
-
-
-    print("Done.")
+    print("Done!")
