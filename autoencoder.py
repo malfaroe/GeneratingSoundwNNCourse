@@ -333,6 +333,21 @@ class Autoencoder:
         self.autoencoder.load_weights(weights_path)
 
 
+    ##RECONSTRUCTION UNIT
+    def reconstruct(self, images):
+        """Method for reconstructing images
+        from a sample coming from the test set.
+        Part one: creates the latent representations
+        in the latent space using the encoder unit
+        Part two: uses the latent representation
+        for reconstructing the image using the decoder unit
+        param:
+        images: list of images sampled from the test set
+        """
+        latent_representations = self.encoder.predict(images)
+        reconstructed_images = self.decoder.predict(latent_representations)
+        return reconstructed_images, latent_representations
+
 
             
 if __name__ == "__main__":
