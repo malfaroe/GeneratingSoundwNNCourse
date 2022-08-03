@@ -1,10 +1,10 @@
 """ Building and assembly of a Variational Autoencoder Architecture"""
 
-"""Class autoencoder"""
+"""Class Variational Autoencoder"""
 
 from tensorflow.keras import Model 
 from tensorflow.keras.layers import Input, Conv2D, ReLU, BatchNormalization, \
-    Flatten, Dense, Reshape, Conv2DTranspose, Activation
+    Flatten, Dense, Reshape, Conv2DTranspose, Activation, Lambda
 from tensorflow.keras import backend as K
 from tensorflow.keras.optimizers import Adam
 
@@ -19,10 +19,10 @@ import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
 
 class VAE():
-    """Class VAE represents a Convolutional variational autoencoder
+    """Class VAE represents a Convolutional Variational Autoencoder
     architecture with mirrored encoder and decoder components
     
-    params:
+    Params:
     input_shape: tuple (nr_rows (width), nr_columns (height), nr_channels) 
                 ex: with a grayscale image the nr of channels is 1
     conv_filters: tuple of nr of filters on each layer
@@ -43,6 +43,7 @@ class VAE():
         self.conv_kernels = conv_kernels
         self.conv_strides = conv_strides
         self.latent_space_dim = latent_space_dim
+        self._calculate_reconstruction_loss_weight = 1000
 
         #Initialize the components
         self.encoder = None #atributo que sera un keras tf model
@@ -130,15 +131,27 @@ class VAE():
 
     def _add_bottleneck(self, x):
         """Final stage: flattens the data and
-        adds a Bottleneck, which is a Dense Layer
-        Flatten method: flattens the multi-dimensional
-            input tensors into a single dimension"""
+        adds a Bottleneck with Gaussian sampling
+            1. Learn mu vector
+            2. learn sigma vector (log variance actually)
+            3. sample z = u + sigma * epsilon"""
         #saves shape of data before bottleneck in a tuple
         self._shape_before_bottleneck = K.int_shape(x)[1:] 
         #Flatten the data
         x = Flatten()(x)
-        #Now pass the flatten data through a dense layer
-        x = Dense(self.latent_space_dim, name = "encoder_output")(x)
+        #Set up the mu and sigma vectors
+        self.mu = Dense(self.latent_space_dim, name = "mu")(x)
+        self.log_variance = Dense(self.latent_space_dim, name = "log_variance")(x)
+        #Now we need to sample from the distribution, so we use the Keras Lambda Layer
+        def sample_point_from_normal_distribution(args):
+            mu, log_variance = args
+            epsilon = K.random_normal(shape = K.shape(mu),
+            mean = 0, stddev = 1) #sampled from normal dist
+            sampled_point = mu + K.exp(log_variance / 2) * epsilon
+            return sampled_point
+        #Now we use the Keras Lambda Layer
+        x = Lambda(sample_point_from_normal_distribution, 
+        name = "encoder_output")([self.mu, self.log_variance])
         return x
 
     #######
@@ -260,8 +273,10 @@ class VAE():
     """We need to compile the model and then training it..."""
     def compile(self, learning_rate = 0.0001):
         optimizer = Adam(learning_rate = learning_rate)
-        mse_loss = MeanSquaredError()
-        self.autoencoder.compile(optimizer = optimizer, loss = mse_loss)
+        self.autoencoder.compile(optimizer = optimizer, 
+        loss = self._calculate_combined_loss,
+        metrics = [self._calculate_reconstruction_loss, 
+        self._calculate_kl_loss])
 
     def train(self, x_train, batch_size, epochs):
         """Como autoencoders trata de reconstruir un input
@@ -290,6 +305,25 @@ class VAE():
         if not os.path.exists(folder):
             os.makedirs(folder)
     
+    #Create an updated Loss Function
+    """This is he sum of the reconstruction loss
+    and the KL Loss"""
+    def _calculate_reconstruction_loss(self, y_target, y_predicted):
+        error = y_target - y_predicted
+        reconstruction_loss = K.mean(K.square(error), axis =[1,2,3])
+        return reconstruction_loss
+
+    def _calculate_kl_loss(self, y_target, y_predicted):
+        kl_loss = -0.5 * K.sum(1 + self.log_variance - K.square(self.mu)-
+        K.exp(self.log_variance), axis = 1)
+        return kl_loss
+
+    def _calculate_combined_loss(self, y_target, y_predicted):
+        reconstruction_loss = self._calculate_reconstruction_loss(y_target, y_predicted)
+        kl_loss = self._calculate_kl_loss(y_target, y_predicted)
+        combined_loss = self._calculate_reconstruction_loss_weight * reconstruction_loss\
+                                                                    + kl_loss
+        return combined_loss
 
 
     def _save_parameters(self, save_folder):
@@ -320,7 +354,7 @@ class VAE():
         with open(parameters_path, "rb") as f:
             parameters = pickle.load(f)
         #Ahora creamos una instancia de autoencoder pasandole los parametros
-        autoencoder = Autoencoder(*parameters)
+        autoencoder = VAE(*parameters)
         #Cargamos los weights ahora
         weights_path = os.path.join(save_folder, "weights.h5")
         autoencoder.load_weights(weights_path)
