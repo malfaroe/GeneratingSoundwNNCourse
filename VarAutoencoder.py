@@ -335,12 +335,12 @@ class VAE():
                 self.conv_strides, 
                 self.latent_space_dim]
             
-        save_path = os.path.join(save_folder, "parameters.pkl")
+        save_path = os.path.join(save_folder, "parameters_VAE.pkl")
         with open(save_path, "wb") as f:
             pickle.dump(parameters, f)
 
     def _save_weights(self, save_folder):
-        save_path = os.path.join(save_folder, "weights.h5")
+        save_path = os.path.join(save_folder, "weights_VAE.h5")
         self.autoencoder.save_weights(save_path)
 
 
@@ -350,19 +350,32 @@ class VAE():
     def load(cls, save_folder = "."):
         """Loads the saved parameters and the weights
         the creates an auoencoder object using the parameters"""
-        parameters_path = os.path.join(save_folder, "parameters.pkl")
+        parameters_path = os.path.join(save_folder, "parameters_VAE.pkl")
         with open(parameters_path, "rb") as f:
             parameters = pickle.load(f)
         #Ahora creamos una instancia de autoencoder pasandole los parametros
         autoencoder = VAE(*parameters)
         #Cargamos los weights ahora
-        weights_path = os.path.join(save_folder, "weights.h5")
+        weights_path = os.path.join(save_folder, "weights_VAE.h5")
         autoencoder.load_weights(weights_path)
         return autoencoder
 
     def load_weights(self, weights_path):
         self.autoencoder.load_weights(weights_path)
-
+ ##RECONSTRUCTION UNIT
+    def reconstruct(self, images):
+        """Method for reconstructing images
+        from a sample coming from the test set.
+        Part one: creates the latent representations
+        in the latent space using the encoder unit
+        Part two: uses the latent representation
+        for reconstructing the image using the decoder unit
+        param:
+        images: list of images sampled from the test set
+        """
+        latent_representations = self.encoder.predict(images)
+        reconstructed_images = self.decoder.predict(latent_representations)
+        return reconstructed_images, latent_representations
 
 
             
