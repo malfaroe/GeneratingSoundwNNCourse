@@ -77,13 +77,36 @@ class LogSpectrogramExtractor:
         n_fft= self.frame_size,
         hop_length= self.hop_length)[0]
         spectrogram = np.abs(stft)
+        #Para poder generar un spec que se vea correctamente hago log
         log_spectrogram = librosa.amplitude_to_db(spectrogram)
         return log_spectrogram
 
     
 
 class MinMaxNormaliser:
-    pass
+    """MinMax Normalisation
+    so the minimum and maximum
+    get squeashed into some predefined
+    min_val and max_val"""
+    def __init__(self, min_val, max_val):
+        """Predefines the maximum and minimun
+        after the normalization"""
+        self.min =  min_val
+        self.max =  max_val
+
+    def normalise(self, array):
+        #With this we obtain a [0,1] min max
+        norm_array = (array - array.min()) /(array.max() - array.min())
+        #One more step for using any predefined min/max
+        norm_array = norm_array *(self.max - self.min) - self.min
+        return norm_array
+
+    def denormalise(self, norm_array, original_min, original_max):
+        array = (norm_array - self.min) /(self.max - self.min)
+        array = array * (original_max - original_min) + original_min
+        return array
+
+        
 
 
 class Saver:
@@ -113,5 +136,6 @@ if __name__ == "__main__":
     print(signal.shape)
     ls = LogSpectrogramExtractor(FRAME_SIZE, HOP_LENGTH)
     print(ls.extract(signal).shape)
-
+    Normalizer = MinMaxNormaliser(-1,1)
+    print("Normalised array:", Normalizer.normalise(arr_m))
 print("Done.")
