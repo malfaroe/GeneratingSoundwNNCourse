@@ -110,32 +110,173 @@ class MinMaxNormaliser:
 
 
 class Saver:
-    pass
+    """Saves features and min, max values
+    Atributes:
+    Save_feature_dir:directory to store the features
+    min_max_values_save_dir: to store the min-max values"""
 
+    def __init__(self, feature_save_dir, min_max_values_save_dir):
+        self.feature_save_dir = feature_save_dir
+        self.min_max_values_save_dir = min_max_values_save_dir
+
+    def save_feature(self, feature, file_path):
+        """Saves the arrays in a npy format
+        using the np.save numpy method"""
+        save_path = self._generate_save_path(file_path)
+        #Guardamos el arreglo en formato npy usando np.save
+        np.save(save_path, feature)
+        
+
+    def save_min_max_values(self, min_max_values):
+        """Saves the min max values as pkl"""
+        save_path = os.path.join(self.min_max_values_save_dir, 
+                                "min_max_values.pkl")
+        self._save(min_max_values, save_path)
+
+    def _generate_save_path(self, file_path):
+        """Generates a path
+        for feature arrays to be stored
+         as .npy files"""
+        #Genera un contenedor para crear el nombre del archivo en el save
+        file_name = os.path.split(file_path)[1] # 1 es el tail
+        save_path = os.path.join(self.feature_save_dir, file_name + ".npy")
+        return save_path 
+
+
+    @staticmethod
+    def _save(data, save_path):
+        """Method for saving usable
+         in and outside any class"""
+        with open(save_path, "wb") as f:
+            pickle.dump(data, f)
 
 class PreprocessingPipeline:
-    pass
+    """Pipeline for preprocessing audio files
+    following these steps:
+    1. Load a file
+    2. Pad the signal if necessary
+    3. Extract the log spectrogram from signal
+    4. Normalise spectrogram
+    5. Save the normalised spectrogram
+    
+    Stores also the min and max original values of each 
+    array/signal"""
+
+    def __init__(self):
+        """Instantiates all the classes we built"""
+        self._loader = None
+        self.padder = None
+        self.extractor = None
+        self.normaliser = None
+        self.saver = None
+        self.min_max_values = {}
+        self.num_expected_samples = None
+
+    #Voy a  definir _loader ocmo una propiedad
+    @property
+    def loader(self):
+        return self._loader
+    
+    #Con un setter decorator voy a permitir
+    #modificar los parametros del loader
+    #Como por ejemplo el num_expected_samples
+
+    @loader.setter
+    def loader(self, loader):
+        self._loader = loader
+        self._num_expected_samples = int(loader.sample_rate * loader.duration)
+
+
+    def process(self, audio_files_dir):
+        """Loads each file from the directory and applies
+        the preprocessing function _process_file
+        that contains all the steps
+        params:
+        audio_files_dir: path of files directory"""
+
+        for root, _, files in os.walk(audio_files_dir):#revisa todos 
+            for file in files:
+                file_path = os.path.join(root, file)
+                self._process_file(file_path)
+                print(f"Processed file {file_path}")
+        self.saver.save_min_max_values(self.min_max_values)
+
+
+    def _process_file(self, file_path):
+        """Method for processing 
+        individual file
+        1. Load
+        2. Padd if necesssary
+        3. Extract features(spectrogram)
+        4. Normalise feature array
+        5. Save the min and max values of the feature
+        6. Saves the normalised feature array"""
+        signal = self._loader.load(file_path)
+        if self._is_padding_necessary(signal):
+            signal = self._apply_padding(signal)
+        feature = self.extractor.extract(signal)
+        norm_feature = self.normaliser.normalise(feature)
+        save_path = self.saver.save_feature(norm_feature, file_path)
+        self._store_min_max_value(save_path, feature.min(), feature.max())
+
+
+    def _is_padding_necessary(self, signal):
+        """Compares the len of the current signal
+        with the len of the expected signal"""
+        if len (signal) < self._num_expected_samples:
+            return True
+        return False
+
+    def _apply_padding(self, signal):
+        """Applies right_pad to
+        the signal"""
+        num_missing_samples = self._num_expected_samples - len (signal) 
+        padded_signal = self.padder.right_pad(signal, num_missing_samples)
+        return padded_signal
+
+    
+    def _store_min_max_value(self, save_path, min_val, max_val):
+        """Stores the min and max values of the feature array
+        in a dictionary"""
+        self.min_max_values[save_path] = {
+            "min":min_val,
+            "max": max_val
+        }
 
 
 
-##testing
-FRAME_SIZE = 512
-HOP_LENGTH = 256
-DURATION = 0.74  # in seconds
-SAMPLE_RATE = 22050
-MONO = True
+        
+
 
 if __name__ == "__main__":
-    arr_m = np.array([1,2,3])
-    song_path = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\spoken_data\7_theo_47.wav"
+    
+    ##testing
+    FRAME_SIZE = 512
+    HOP_LENGTH = 256
+    DURATION = 0.74  # in seconds
+    SAMPLE_RATE = 22050
+    MONO = True
+    
+    #FILES_DIR= r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\AUDIO_DATA"
+    FILES_DIR= r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\AUDIO_DATA"
+    MIN_MAX_VALUES_SAVE_DIR = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\MIN_MAX_VALUES_SAVE_DIR"
+    SPECTROGRAMS_DIR = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\SPECTROGRAM_SAVE_DIR"
+
+    #Instantiation of classes
+    loader = Loader(SAMPLE_RATE, DURATION, MONO)
     padder = Padder()
-    print("Array with left pad:", padder.left_pad(array = arr_m, num_missing_items = 5))
-    print(padder.left_pad(array = arr_m, num_missing_items = 5).shape)
-    Loader = Loader(SAMPLE_RATE, DURATION, MONO)
-    signal = Loader.load(song_path)
-    print(signal.shape)
-    ls = LogSpectrogramExtractor(FRAME_SIZE, HOP_LENGTH)
-    print(ls.extract(signal).shape)
-    Normalizer = MinMaxNormaliser(-1,1)
-    print("Normalised array:", Normalizer.normalise(arr_m))
+    log_spectrogram_extractor = LogSpectrogramExtractor(FRAME_SIZE, HOP_LENGTH)
+    min_max_normalizer = MinMaxNormaliser(0,1)
+    saver = Saver(SPECTROGRAMS_DIR, MIN_MAX_VALUES_SAVE_DIR)
+    #Instanciamos la preprocess pipeline y todos sus atributos
+    preprocessing_pipeline = PreprocessingPipeline()
+    preprocessing_pipeline.loader = loader
+    preprocessing_pipeline.padder = padder
+    preprocessing_pipeline.extractor = log_spectrogram_extractor
+    preprocessing_pipeline.normaliser = min_max_normalizer
+    preprocessing_pipeline.saver = saver
+    
+    preprocessing_pipeline.process(FILES_DIR)
+
+
 print("Done.")
