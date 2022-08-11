@@ -9,7 +9,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.optimizers import Adam
 
 from tensorflow.keras.losses import MeanSquaredError
-from keras.datasets import mnist
+from tensorflow.keras.datasets import mnist
 import numpy as np
 import os
 import pickle

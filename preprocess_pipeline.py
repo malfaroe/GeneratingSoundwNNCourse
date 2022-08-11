@@ -75,7 +75,7 @@ class LogSpectrogramExtractor:
     def extract(self, signal):
         stft = librosa.stft(signal, 
         n_fft= self.frame_size,
-        hop_length= self.hop_length)[0]
+        hop_length= self.hop_length)[:-1]
         spectrogram = np.abs(stft)
         #Para poder generar un spec que se vea correctamente hago log
         log_spectrogram = librosa.amplitude_to_db(spectrogram)

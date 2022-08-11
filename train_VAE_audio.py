@@ -2,7 +2,7 @@
 the audio digits dataset
 """
 import tensorflow
-from tensorflow.keras.datasets import mnist
+from tensorflow import keras
 from VarAutoencoder import VAE
 import os
 import numpy as np
@@ -11,7 +11,7 @@ import numpy as np
 
 LEARNING_RATE = 0.0005
 BATCH_SIZE = 64
-EPOCHS = 150
+EPOCHS = 1
 
 def load_fsdd(spectrogram_path):
     """This utility loads the already processed audio
@@ -26,11 +26,12 @@ def load_fsdd(spectrogram_path):
                 x_train.append(spectrogram)
                
     x_train = np.array(x_train)
+    print("First shape:", x_train.shape)
     #Spectrogram has the shape (nr_bins, nr_frames)
     #But VAE with convo layers need arrays of 3d
     #So we need to reshape the spectrogram array adding one dimension
     x_train = x_train[..., np.newaxis] #--->(nr examples(3000), n_bins (256), n_frames(64), 1(newaxis))
-
+    print("Now the shape of train is:", x_train.shape)
     return x_train
 
 
@@ -57,7 +58,7 @@ SPECTROGRAMS_DIR = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\
 if __name__ == "__main__":
     x_train = load_fsdd(SPECTROGRAMS_DIR)
     autoencoder = train(x_train, LEARNING_RATE, BATCH_SIZE, EPOCHS)
-    autoencoder.save("model")
+    autoencoder.save("model_audio")
     
     print("Done.")
 
