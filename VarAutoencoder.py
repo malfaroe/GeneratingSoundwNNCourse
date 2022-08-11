@@ -43,7 +43,7 @@ class VAE():
         self.conv_kernels = conv_kernels
         self.conv_strides = conv_strides
         self.latent_space_dim = latent_space_dim
-        self._calculate_reconstruction_loss_weight = 1000
+        self._calculate_reconstruction_loss_weight = 1000000
 
         #Initialize the components
         self.encoder = None #atributo que sera un keras tf model
