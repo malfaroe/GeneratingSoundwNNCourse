@@ -58,7 +58,7 @@ SPECTROGRAMS_DIR = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\
 if __name__ == "__main__":
     x_train = load_fsdd(SPECTROGRAMS_DIR)
     autoencoder = train(x_train, LEARNING_RATE, BATCH_SIZE, EPOCHS)
-    autoencoder.save("model_audio")
+    autoencoder.save("model")
     
     print("Done.")
 

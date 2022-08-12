@@ -349,8 +349,9 @@ class VAE():
                 #En vez de self usa cls
     def load(cls, save_folder = "."):
         """Loads the saved parameters and the weights
-        the creates an auoencoder object using the parameters"""
+        the creates an autoencoder object using the parameters"""
         parameters_path = os.path.join(save_folder, "parameters_VAE.pkl")
+        print("Parameters path:", parameters_path)
         with open(parameters_path, "rb") as f:
             parameters = pickle.load(f)
         #Ahora creamos una instancia de autoencoder pasandole los parametros

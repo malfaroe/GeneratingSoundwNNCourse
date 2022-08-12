@@ -51,7 +51,8 @@ def convert_spectrograms_to_audio(self, generated_spectrograms,min_max_values):
         #Append
         signals.append(signal)
 
-        
+
+
         
 
 
