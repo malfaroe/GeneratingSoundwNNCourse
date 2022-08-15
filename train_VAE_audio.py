@@ -52,8 +52,9 @@ def train(x_train, learning_rate, batch_size, epochs):
 
 
 
-SPECTROGRAMS_DIR = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\SPECTROGRAM_SAVE_DIR"
-
+#SPECTROGRAMS_DIR = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\SPECTROGRAM_SAVE_DIR"
+#mac
+SPECTROGRAMS_DIR = r"/Users/mauricioalfaro/Documents/mae_code/GeneratingSoundwNNCourse/SPECTROGRAM_SAVE_DIR"
 
 if __name__ == "__main__":
     x_train = load_fsdd(SPECTROGRAMS_DIR)

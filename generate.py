@@ -5,7 +5,7 @@ Steps:
 1. Load the files  already preprocessed as spectrograms + respective min_max_values
 2. Select samples randomly for testing
 3. Generate the samples from sampled spectrograms
-4. Convert to audio
+4. Convert to audio (from soundgenerate´s generate method)
 4. Save audio signals
 """
 
@@ -22,10 +22,6 @@ from train_VAE_audio import SPECTROGRAMS_DIR
 
 
 
-HOP_LENGTH = 256
-SAVE_DIR_ORIGINAL = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\Samples\original"
-SAVE_DIR_GENERATED = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\Samples\generated" #se guardan los samples originales seleccionados random para generar
-MIN_MAX_VALUES_SAVE_DIR = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\MIN_MAX_VALUES_SAVE_DIR" #se guardan los samples generados
 
 
 
@@ -52,14 +48,68 @@ def load_fsdd(spectrogram_path):
     print("Now the shape of train is:", x_train.shape)
     return x_train, file_paths
 
+#Select samples randomly for testing
+
+def select_spectrograms(spectrograms, file_paths,
+                        min_max_values, num_spectrograms = 2):
+    """Take random samples from the spectrograms"""
+    sampled_indexes = np.random.choice(len(spectrograms), num_spectrograms)
+    sampled_spectrogams = spectrograms[sampled_indexes]
+
+    #Corta File_paths a solo los samples seleccionados
+    #for index in sampled_indexes:
+        #print(file_paths[index])
+    file_paths = [file_paths[index] for index in sampled_indexes]
+    #Extrae los min_max_values de los seleccionados
+    sampled_min_max_values = [min_max_values[file_path]
+                            for file_path in file_paths]
+    print(file_paths)
+    print(sampled_min_max_values)
+    return sampled_spectrogams, sampled_min_max_values
+
+
+#Saves the generted signals
+def save_signals(signals, save_dir, sample_rate = 22050):
+    """Signals are comming from the generate method,
+    and using the Soundfile write we can save them
+    in save_dir using a determined sample rate"""
+    for i, signal in enumerate(signals):
+        save_path = os.path.join(save_dir, str(i) + ".wav")
+        sf.write(save_path, signal, sample_rate)
 
 
 
-SAVED_MODEL_FOLDER = R"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\model_audio"
 
+HOP_LENGTH = 256
+SAVE_DIR_ORIGINAL = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\Samples\original"
+SAVE_DIR_GENERATED = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\Samples\generated" #se guardan los samples originales seleccionados random para generar
+#MIN_MAX_VALUES_SAVE_DIR = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\MIN_MAX_VALUES_SAVE_DIR\min_max_values.pkl" 
+MIN_MAX_VALUES_SAVE_DIR = r"/Users/mauricioalfaro/Documents/mae_code/GeneratingSoundwNNCourse/MIN_MAX_VALUES_SAVE_DIR/min_max_values.pkl"
+#se guardan los samples generados
+
+SAVED_MODEL_FOLDER = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\model_audio"
+SPECTROGRAM_SAVE_DIR = r"/Users/mauricioalfaro/Documents/mae_code/GeneratingSoundwNNCourse/SPECTROGRAM_SAVE_DIR"
 
 
 if __name__== "__main__":
+    """Steps:
+1. Load the files  already preprocessed as spectrograms + respective min_max_values
+2. Select samples randomly for testing
+3. Generate the samples from sampled spectrograms
+4. Convert to audio (from soundgenerate´s generate method)
+4. Save audio signals
+"""
+#Initialise sound generator
     vae = VAE.load("model") #loads the model 
     sound_generator = SoundGenerator(vae, HOP_LENGTH)
-    print("Loaded...")
+    # 1. Load the files  already preprocessed as spectrograms + respective min_max_values
+    #Loads the min_max...
+    with open(MIN_MAX_VALUES_SAVE_DIR, "rb") as f:
+        min_max_values = pickle.load(f)
+
+    #Loads the spectrograms
+    specs, file_paths = load_fsdd(SPECTROGRAM_SAVE_DIR)
+
+    #2. Select samples randomly for testing
+    sampled_specs, sampled_min_max_values = select_spectrograms(specs,file_paths,min_max_values, 5)
+    print("Satic fire successfully executed...")
