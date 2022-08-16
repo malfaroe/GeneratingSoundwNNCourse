@@ -98,7 +98,7 @@ class MinMaxNormaliser:
         #With this we obtain a [0,1] min max
         norm_array = (array - array.min()) /(array.max() - array.min())
         #One more step for using any predefined min/max
-        norm_array = norm_array *(self.max - self.min) - self.min
+        norm_array = norm_array *(self.max - self.min) + self.min
         return norm_array
 
     def denormalise(self, norm_array, original_min, original_max):
@@ -125,6 +125,7 @@ class Saver:
         save_path = self._generate_save_path(file_path)
         #Guardamos el arreglo en formato npy usando np.save
         np.save(save_path, feature)
+        return save_path
         
 
     def save_min_max_values(self, min_max_values):
@@ -170,7 +171,7 @@ class PreprocessingPipeline:
         self.normaliser = None
         self.saver = None
         self.min_max_values = {}
-        self.num_expected_samples = None
+        self._num_expected_samples = None
 
     #Voy a  definir _loader ocmo una propiedad
     @property

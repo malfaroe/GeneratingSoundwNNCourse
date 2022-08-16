@@ -57,14 +57,12 @@ def select_spectrograms(spectrograms, file_paths,
     sampled_spectrogams = spectrograms[sampled_indexes]
 
     #Corta File_paths a solo los samples seleccionados
-    #for index in sampled_indexes:
-        #print(file_paths[index])
+
     file_paths = [file_paths[index] for index in sampled_indexes]
+    #print("Prueba de valor min_max:", min_max_values[12])
     #Extrae los min_max_values de los seleccionados
-    sampled_min_max_values = [min_max_values[file_path]
-                            for file_path in file_paths]
-    print(file_paths)
-    print(sampled_min_max_values)
+    
+    sampled_min_max_values = [min_max_values[file_path] for file_path in file_paths]
     return sampled_spectrogams, sampled_min_max_values
 
 
@@ -83,13 +81,13 @@ def save_signals(signals, save_dir, sample_rate = 22050):
 HOP_LENGTH = 256
 SAVE_DIR_ORIGINAL = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\Samples\original"
 SAVE_DIR_GENERATED = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\Samples\generated" #se guardan los samples originales seleccionados random para generar
-#MIN_MAX_VALUES_SAVE_DIR = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\MIN_MAX_VALUES_SAVE_DIR\min_max_values.pkl" 
-MIN_MAX_VALUES_SAVE_DIR = r"/Users/mauricioalfaro/Documents/mae_code/GeneratingSoundwNNCourse/MIN_MAX_VALUES_SAVE_DIR/min_max_values.pkl"
+MIN_MAX_VALUES_FILE= r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\MIN_MAX_VALUES_SAVE_DIR\min_max_values.pkl" 
+#MIN_MAX_VALUES_SAVE_DIR = r"/Users/mauricioalfaro/Documents/mae_code/GeneratingSoundwNNCourse/MIN_MAX_VALUES_SAVE_DIR/min_max_values.pkl"
 #se guardan los samples generados
 
 SAVED_MODEL_FOLDER = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\model_audio"
-SPECTROGRAM_SAVE_DIR = r"/Users/mauricioalfaro/Documents/mae_code/GeneratingSoundwNNCourse/SPECTROGRAM_SAVE_DIR"
-
+#SPECTROGRAM_DIR = r"/Users/mauricioalfaro/Documents/mae_code/GeneratingSoundwNNCourse/SPECTROGRAM_SAVE_DIR"
+SPECTROGRAMS_DIR = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\SPECTROGRAM_SAVE_DIR"
 
 if __name__== "__main__":
     """Steps:
@@ -104,11 +102,12 @@ if __name__== "__main__":
     sound_generator = SoundGenerator(vae, HOP_LENGTH)
     # 1. Load the files  already preprocessed as spectrograms + respective min_max_values
     #Loads the min_max...
-    with open(MIN_MAX_VALUES_SAVE_DIR, "rb") as f:
+    with open(MIN_MAX_VALUES_FILE, "rb") as f:
         min_max_values = pickle.load(f)
-
+    print("Files loaded...")
     #Loads the spectrograms
-    specs, file_paths = load_fsdd(SPECTROGRAM_SAVE_DIR)
+    specs, file_paths = load_fsdd(SPECTROGRAMS_DIR)
+    print("Spectrograms and file paths loaded...")
 
     #2. Select samples randomly for testing
     sampled_specs, sampled_min_max_values = select_spectrograms(specs,file_paths,min_max_values, 5)
