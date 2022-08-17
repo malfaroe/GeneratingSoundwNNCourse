@@ -363,6 +363,7 @@ class VAE():
 
     def load_weights(self, weights_path):
         self.autoencoder.load_weights(weights_path)
+        
  ##RECONSTRUCTION UNIT
     def reconstruct(self, images):
         """Method for reconstructing images

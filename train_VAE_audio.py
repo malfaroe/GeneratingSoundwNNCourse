@@ -11,7 +11,7 @@ import numpy as np
 
 LEARNING_RATE = 0.0005
 BATCH_SIZE = 64
-EPOCHS = 10
+EPOCHS = 2
 
 def load_fsdd(spectrogram_path):
     """This utility loads the already processed audio
