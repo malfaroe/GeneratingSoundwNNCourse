@@ -93,8 +93,8 @@ if __name__== "__main__":
     """Steps:
 1. Load the files  already preprocessed as spectrograms + respective min_max_values
 2. Select samples randomly for testing
-3. Generate the samples from sampled spectrograms
-4. Convert to audio (from soundgenerate´s generate method)
+3. Generate the samples from sampled spectrograms and convert them into audio
+4. Convert to audio (from soundgenerate´s generate method) the original samples
 4. Save audio signals
 """
 #Initialise sound generator
@@ -111,4 +111,21 @@ if __name__== "__main__":
 
     #2. Select samples randomly for testing
     sampled_specs, sampled_min_max_values = select_spectrograms(specs,file_paths,min_max_values, 5)
+
+    #3.Generate the samples from sampled spectrograms: returns converted audio files
+    signals, _ = sound_generator.generate(sampled_specs,
+                                         sampled_min_max_values)
+
+    #4. Convert the original samples to audio
+
+    original_signals = sound_generator.convert_spectrograms_to_audio(sampled_specs,
+                                                                     sampled_min_max_values)
+
+    #5. Save original and generated audios 
+
+    save_signals(original_signals, SAVE_DIR_ORIGINAL)
+    save_signals(signals, SAVE_DIR_GENERATED)
+
     print("Satic fire successfully executed...")
+
+

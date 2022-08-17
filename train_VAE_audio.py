@@ -11,7 +11,7 @@ import numpy as np
 
 LEARNING_RATE = 0.0005
 BATCH_SIZE = 64
-EPOCHS = 1
+EPOCHS = 10
 
 def load_fsdd(spectrogram_path):
     """This utility loads the already processed audio
@@ -52,9 +52,9 @@ def train(x_train, learning_rate, batch_size, epochs):
 
 
 
-#SPECTROGRAMS_DIR = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\SPECTROGRAM_SAVE_DIR"
+SPECTROGRAMS_DIR = r"C:\Users\malfaro\Desktop\mae_code\GeneratingSoundwNNCourse\SPECTROGRAM_SAVE_DIR"
 #mac
-SPECTROGRAMS_DIR = r"/Users/mauricioalfaro/Documents/mae_code/GeneratingSoundwNNCourse/SPECTROGRAM_SAVE_DIR"
+#SPECTROGRAMS_DIR = r"/Users/mauricioalfaro/Documents/mae_code/GeneratingSoundwNNCourse/SPECTROGRAM_SAVE_DIR"
 
 if __name__ == "__main__":
     x_train = load_fsdd(SPECTROGRAMS_DIR)
